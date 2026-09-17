@@ -98,7 +98,7 @@ docker compose version
 Clonar la bifurcación propia (reemplazar `TU_USUARIO` por la cuenta personal de GitHub):
 
 ```bash
-git clone https://github.com/TU_USUARIO/pizzeria-base.git
+git clone https://github.com/O-Dev-100/pizzeria-base.git https://github.com//pizzeria-base
 cd pizzeria-base
 ```
 
