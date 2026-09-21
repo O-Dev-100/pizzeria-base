@@ -1,5 +1,5 @@
 # ==============================================================================
-# COMPOSE DE PRODUCCIÓN: PIZZERÍA BELLA NAPOLI (MINIPC / CLOUD)
+# COMPOSE DE PRODUCCIÓN: PIZZERÍA BELLA NAPOLI (AWS + CLOUDFLARE ZERO TRUST)
 # ==============================================================================
 # Despliegue en producción con un solo comando:
 # docker compose -f docker-compose.prod.yml up -d --build
@@ -50,7 +50,7 @@ services:
       - pizzeria-prod-network
     # En producción NO exponemos el puerto 3000 al exterior; Nginx actúa de proxy inverso
 
-  # 3. Frontend Web Comercial & KDS (Nginx Reverse Proxy con SSL/TLS) - PUERTOS 80 Y 443
+  # 3. Frontend Web Comercial, KDS y Proxy Inverso Nginx
   frontend-web:
     build:
       context: ./frontend-web
@@ -59,9 +59,6 @@ services:
     restart: unless-stopped
     ports:
       - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
     networks:
@@ -79,26 +76,49 @@ services:
     networks:
       - pizzeria-prod-network
 
-  # 5. Gestor Web Visual de Base de Datos (Adminer para Docencia / Alumnos)
-  adminer:
-    image: adminer:latest
-    container_name: pizzeria-prod-adminer
+  # 5. Gestor Web Visual de Base de Datos (DbGate con Preconexión Automática)
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: pizzeria-prod-dbgate
     restart: unless-stopped
-    ports:
-      - "${ADMINER_PORT:-8082}:8080"
+    environment:
+      - WEB_ROOT=/dbgate
+      - SKIP_ALL_AUTH=true
+      - CONNECTIONS=pizzeria
+      - LABEL_pizzeria=Pizzería DB
+      - SERVER_pizzeria=db
+      - PORT_pizzeria=5432
+      - USER_pizzeria=${DB_USER:-pizzeria_user}
+      - PASSWORD_pizzeria=${DB_PASSWORD:-pizzeria_pass_2026!}
+      - DATABASE_pizzeria=${DB_NAME:-pizzeria_db}
+      - ENGINE_pizzeria=postgres@dbgate-plugin-postgres
+      - CONNECTION_pizzeria_LABEL=Pizzería DB
+      - CONNECTION_pizzeria_SERVER=db
+      - CONNECTION_pizzeria_PORT=5432
+      - CONNECTION_pizzeria_USER=${DB_USER:-pizzeria_user}
+      - CONNECTION_pizzeria_PASSWORD=${DB_PASSWORD:-pizzeria_pass_2026!}
+      - CONNECTION_pizzeria_DATABASE=${DB_NAME:-pizzeria_db}
+      - CONNECTION_pizzeria_ENGINE=postgres@dbgate-plugin-postgres
+    volumes:
+      - pizzeria_prod_dbgate:/root/.dbgate
+    expose:
+      - "3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - pizzeria-prod-network
 
-  # 6. Túnel HTTPS Público Seguro (Cloudflare Tunnel para App Móvil DAM)
-  # Se activa con: docker compose -f docker-compose.prod.yml --profile tunnel up -d
+  # 6. Túnel Seguro Cloudflare Zero Trust (Conexión Permanente sin IPs ni Puertos Abiertos)
   tunnel:
     image: cloudflare/cloudflared:latest
     container_name: pizzeria-prod-tunnel
     restart: unless-stopped
-    profiles: ["tunnel"]
-    command: tunnel --no-autoupdate --url http://frontend-qr-app:80
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - frontend-web
     networks:
       - pizzeria-prod-network
 
@@ -107,7 +127,10 @@ networks:
   pizzeria-prod-network:
     driver: bridge
 
-# Volumen persistente para datos de PostgreSQL en disco
+# Volúmenes persistentes
 volumes:
   pizzeria_prod_pgdata:
     driver: local
+  pizzeria_prod_dbgate:
+    driver: local
+

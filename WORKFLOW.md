@@ -85,7 +85,7 @@ Con el código ya auditado y subido a GitHub, se traslada la nueva versión a la
 
 ### 3.1 Conexión a la Instancia EC2
 1. Accede a la Consola de AWS EC2.
-2. Localiza tu instancia `Pizzeria-TuNombre` y pulsa **Conectar** $\rightarrow$ **EC2 Instance Connect** (o mediante tu clave SSH si la tienes configurada).
+2. Localiza tu instancia `Pizzeria-TuNombre` y pulsa **Conectar** → **EC2 Instance Connect** (o mediante tu clave SSH si la tienes configurada).
 3. Abre la terminal en el directorio del proyecto:
    ```bash
    cd ~/pizzeria-base
@@ -119,7 +119,7 @@ Comprueba que los contenedores se han recreado correctamente y están saludables
 docker compose -f docker-compose.prod.yml ps
 ```
 
-Accede a la IP pública de tu servidor (`http://<IP_PUBLICA>`) forzando el refresco de caché en el navegador (`Ctrl + F5` o `Cmd + Shift + R`) para verificar que las modificaciones ya están en producción.
+Accede a tu URL pública segura (`https://daw-XX.guillermofoix.org` o a la IP directa de AWS) forzando el refresco de caché en el navegador (`Ctrl + F5` o `Cmd + Shift + R`) para verificar que las modificaciones ya están en producción.
 
 ---
 

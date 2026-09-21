@@ -84,15 +84,35 @@ services:
     networks:
       - pizzeria-network
 
-  # 5. Gestor Web Visual de Base de Datos (Adminer)
-  adminer:
-    image: adminer:latest
-    container_name: pizzeria-adminer
+  # 5. Gestor Web Visual de Base de Datos (DbGate)
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: pizzeria-dbgate
     restart: unless-stopped
+    environment:
+      - SKIP_ALL_AUTH=true
+      - CONNECTIONS=pizzeria
+      - LABEL_pizzeria=Pizzería DB Local
+      - SERVER_pizzeria=db
+      - PORT_pizzeria=5432
+      - USER_pizzeria=${DB_USER:-pizzeria_user}
+      - PASSWORD_pizzeria=${DB_PASSWORD:-pizzeria_pass_1234}
+      - DATABASE_pizzeria=${DB_NAME:-pizzeria_db}
+      - ENGINE_pizzeria=postgres@dbgate-plugin-postgres
+      - CONNECTION_pizzeria_LABEL=Pizzería DB Local
+      - CONNECTION_pizzeria_SERVER=db
+      - CONNECTION_pizzeria_PORT=5432
+      - CONNECTION_pizzeria_USER=${DB_USER:-pizzeria_user}
+      - CONNECTION_pizzeria_PASSWORD=${DB_PASSWORD:-pizzeria_pass_1234}
+      - CONNECTION_pizzeria_DATABASE=${DB_NAME:-pizzeria_db}
+      - CONNECTION_pizzeria_ENGINE=postgres@dbgate-plugin-postgres
+    volumes:
+      - pizzeria_dbgate:/root/.dbgate
     ports:
-      - "${ADMINER_PORT:-8082}:8080"
+      - "${DBGATE_PORT:-8082}:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - pizzeria-network
 
@@ -101,7 +121,10 @@ networks:
   pizzeria-network:
     driver: bridge
 
-# Volumen persistente para la base de datos PostgreSQL
+# Volumen persistente para la base de datos PostgreSQL y DbGate
 volumes:
   pizzeria_pgdata:
     driver: local
+  pizzeria_dbgate:
+    driver: local
+
