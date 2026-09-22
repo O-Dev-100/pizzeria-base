@@ -1,0 +1,76 @@
+# ==============================================================================
+# COMPOSE CAPA DE DATOS (PERSISTENCIA): PIZZERÍA BELLA NAPOLI
+# ==============================================================================
+# Arquitectura desacoplada: Este archivo gestiona exclusivamente el ciclo de
+# vida de los datos (PostgreSQL 16 y gestor visual DbGate).
+#
+# Requisito previo (crear la red externa una sola vez antes de arrancar):
+#   docker network create pizzeria-network
+#
+# Arranque:
+#   docker compose -f docker-compose.db.yml up -d
+# ==============================================================================
+
+services:
+  # 1. Base de Datos Relacional (PostgreSQL 16)
+  db:
+    image: postgres:16-alpine
+    container_name: pizzeria-prod-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-pizzeria_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pizzeria_pass_2026!}
+      POSTGRES_DB: ${DB_NAME:-pizzeria_db}
+    volumes:
+      - pizzeria_prod_pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pizzeria_user} -d ${DB_NAME:-pizzeria_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pizzeria-network
+
+  # 2. Gestor Visual Web de Base de Datos (DbGate)
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: pizzeria-prod-dbgate
+    restart: unless-stopped
+    environment:
+      - WEB_ROOT=/dbgate
+      - SKIP_ALL_AUTH=true
+      - CONNECTIONS=pizzeria
+      - LABEL_pizzeria=Pizzería DB
+      - SERVER_pizzeria=db
+      - PORT_pizzeria=5432
+      - USER_pizzeria=${DB_USER:-pizzeria_user}
+      - PASSWORD_pizzeria=${DB_PASSWORD:-pizzeria_pass_2026!}
+      - DATABASE_pizzeria=${DB_NAME:-pizzeria_db}
+      - ENGINE_pizzeria=postgres@dbgate-plugin-postgres
+      - CONNECTION_pizzeria_LABEL=Pizzería DB
+      - CONNECTION_pizzeria_SERVER=db
+      - CONNECTION_pizzeria_PORT=5432
+      - CONNECTION_pizzeria_USER=${DB_USER:-pizzeria_user}
+      - CONNECTION_pizzeria_PASSWORD=${DB_PASSWORD:-pizzeria_pass_2026!}
+      - CONNECTION_pizzeria_DATABASE=${DB_NAME:-pizzeria_db}
+      - CONNECTION_pizzeria_ENGINE=postgres@dbgate-plugin-postgres
+    volumes:
+      - pizzeria_prod_dbgate:/root/.dbgate
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pizzeria-network
+
+# Red compartida externa: Permite comunicar este stack con el de la aplicación
+networks:
+  pizzeria-network:
+    external: true
+
+# Volúmenes persistentes gestionados por Docker
+volumes:
+  pizzeria_prod_pgdata:
+  pizzeria_prod_dbgate:

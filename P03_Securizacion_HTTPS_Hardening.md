@@ -131,7 +131,7 @@ Para demostrarlo empíricamente:
 
 | Servicio | URL Pública Segura | Protocolo | Estado de Seguridad |
 | :--- | :--- | :---: | :--- |
-| **Portal Web & KDS** | `https://daw-XX.guillermofoix.org` | HTTPS / TLS 1.3 | ✅ Candado verde oficial. |
+| **Portal Web & KDS** | `https://daw-XX.guillermofoix.org` | HTTPS / TLS 1.3 | ✅ Conexión segura oficial (TLS 1.3). |
 | **API REST Backend** | `https://daw-XX.guillermofoix.org/api/health` | HTTPS / TLS 1.3 | ✅ Conexión segura con la BBDD. |
 | **WebApp Móvil Clientes** | `https://daw-XX.guillermofoix.org/app/` | HTTPS / TLS 1.3 | ✅ Service Worker activo y PWA instalable. |
 | **Gestión BBDD (DbGate)** | `https://daw-XX.guillermofoix.org/dbgate/` | HTTPS + WSS | ✅ WebSockets cifrados, BBDD aislada. |
@@ -148,3 +148,8 @@ El Learner Lab detiene automáticamente las instancias tras **4 horas** de sesi�
    ```
 2. En la consola de AWS: Selecciona la instancia → **Estado de la instancia** → **Detener instancia** (_Stop instance_).
 3. Cierra el navegador. Recuerda: **NUNCA pulses "End Lab"** en el panel de Vocareum si deseas conservar tu trabajo para futuras sesiones.
+
+---
+
+## SIGUIENTE PASO: Desacople de Arquitectura y Redes Multi-Stack
+👉 **[Práctica 4: Desacople de Arquitectura y Redes Multi-Stack en Docker](P04_Desacople_BD.md)**

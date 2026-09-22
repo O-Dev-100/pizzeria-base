@@ -37,9 +37,17 @@ graph LR
 
 ## Requisitos Previos
 
-Antes de comenzar, debes disponer de:
-1. Tu máquina EC2 de AWS en ejecución (completada en la [Práctica 1](P01_Despliegue_AWS.md)).
-2. Tu **Subdominio** y tu **Token de Túnel** asignados por el profesor a través de **Aules** (por ejemplo, `daw-01` con su URL `https://daw-01.guillermofoix.org` y su token alfanumérico).
+Antes de comenzar, debes consultar en **Aules** el listado de conexiones asignado por el profesor. Cada fila contiene tres datos vinculados:
+
+| Campo | Ejemplo | Descripción |
+| :--- | :--- | :--- |
+| **Identificador de Alumno** | `daw-01` (o `dam-05`, etc.) | Tu identificador de puesto en el aula. |
+| **Subdominio Personal** | `https://daw-01.guillermofoix.org` | La URL pública y personal con la que accederás a tu pizzería desde Internet. |
+| **Token de Túnel** | `eyJhIjoiMzJmZGQ0Z...` | Clave secreta que autentica y conecta tu servidor con Cloudflare. |
+
+> ℹ️ **¿Dónde se indica el subdominio en la máquina?**  
+> **No necesitas escribir tu subdominio en ningún archivo de configuración.**  
+> El **Token** ya contiene internamente la vinculación criptográfica creada en Cloudflare entre tu subdominio (`daw-XX.guillermofoix.org`) y tu túnel. En cuanto tu contenedor levante el túnel con ese token, Cloudflare dirigirá automáticamente todo el tráfico de tu subdominio hacia tu instancia de AWS.
 
 ---
 
@@ -59,22 +67,29 @@ git pull origin main
 ```
 
 ### 3. Configurar el Token en el archivo de entorno `.env`
-Abre el archivo de configuración `.env` con el editor nano:
+Abre el archivo de configuración `.env` con el editor de texto `nano`:
 ```bash
 nano .env
 ```
 
-Localiza la variable `CLOUDFLARE_TUNNEL_TOKEN=` y pega el token que te ha proporcionado el profesor en Aules:
-```env
-# 2. CONECTIVIDAD CLOUDFLARE ZERO TRUST (TUNNEL)
-CLOUDFLARE_TUNNEL_TOKEN=eyJhIjoiMzJmZGQ0ZWYwMzg4NjA4NTA5ZmY2ZTliMjYw...
+#### Guía rápida de `nano` para insertar el token en el `.env`:
+
+* **Abrir el archivo:** Escribe `nano .env` en la terminal y pulsa `Enter`.
+* **Mover el cursor:** Usa las **flechas del teclado** para situarte justo después del signo igual en `CLOUDFLARE_TUNNEL_TOKEN=`.
+  * *Atajo útil:* **`Ctrl + E`** te lleva directamente al final de la línea actual.
+* **Pegar el token:** Haz **clic derecho** con el ratón sobre la terminal, o pulsa **`Ctrl + Shift + V`** (o **`Shift + Insert`**).
+  * *Precaución:* No uses solo `Ctrl + V`, ya que en `nano` dentro de Linux esa combinación ejecuta la acción de *"Avanzar página"* (`^V`).
+* **Guardar los cambios:** Pulsa **`Ctrl + O`** (letra 'O') y presiona **`Enter`** para confirmar la sobrescritura del archivo `.env`.
+  * *Nota para navegadores web:* Si tu navegador (Chrome o Edge) intercepta `Ctrl + O` abriendo una ventana de tu PC, puedes guardar y salir pulsando directamente **`Ctrl + X`**, respondiendo **`Y`** (Yes) y pulsando **`Enter`**.
+* **Salir del editor:** Pulsa **`Ctrl + X`** para cerrar `nano` y regresar a la terminal (`ubuntu@ip:...$`).
+
+---
+
+#### 💡 Alternativa rápida sin editores (Comando directo)
+Si algún alumno experimenta problemas con los atajos de teclado de su navegador, puede insertar su token directamente ejecutando este comando (reemplazando `TU_TOKEN_AQUI` por su token de Aules):
+```bash
+sed -i 's|^CLOUDFLARE_TUNNEL_TOKEN=.*|CLOUDFLARE_TUNNEL_TOKEN=TU_TOKEN_AQUI|' .env
 ```
-
-> 💡 **Consejo de pegado en terminal:** En la consola web de AWS, usa `Ctrl + V` o haz clic derecho con el ratón para pegar. Verifica que no queden espacios en blanco al inicio o al final del token.
-
-Guarda los cambios y sal del editor:
-* Pulsa `Ctrl + O` y presiona `Enter` para confirmar.
-* Pulsa `Ctrl + X` para salir.
 
 ---
 

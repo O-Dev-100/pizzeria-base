@@ -101,8 +101,16 @@ git pull origin main
 > **Alerta de Seguridad DevOps:** Si `git pull` genera un conflicto o error porque modificaste archivos manualmente en el servidor con `nano`, estarás violando el principio de inmutabilidad. En el servidor **nunca** debe haber cambios locales no versionados.
 
 ### 3.3 Reconstrucción y Despliegue de Contenedores
-Dado que el código fuente está empaquetado dentro de las imágenes de Docker en el entorno de producción, **no basta con hacer `git pull`**. Es obligatorio indicar a Docker Compose que recompile las capas modificadas y recree únicamente los contenedores afectados:
 
+Dado que el código fuente está empaquetado dentro de las imágenes de Docker en el entorno de producción, **no basta con hacer `git pull`**. Es obligatorio indicar a Docker Compose que recompile las capas modificadas y recree los contenedores afectados:
+
+#### A) En Arquitectura Desacoplada (Prácticas 4 y 5 - Recomendado en Producción):
+Solo necesitas reconstruir y desplegar el stack de la aplicación; la base de datos permanece intacta y en ejecución en segundo plano:
+```bash
+docker compose -f docker-compose.app.yml up -d --build
+```
+
+#### B) En Arquitectura Monolítica Inicial (Prácticas 1 a 3):
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
@@ -116,10 +124,15 @@ docker compose -f docker-compose.prod.yml up -d --build
 Comprueba que los contenedores se han recreado correctamente y están saludables:
 
 ```bash
+# Si usas arquitectura desacoplada (P04 / P05):
+docker compose -f docker-compose.app.yml ps
+docker compose -f docker-compose.db.yml ps
+
+# Si usas arquitectura monolítica inicial (P01 - P03):
 docker compose -f docker-compose.prod.yml ps
 ```
 
-Accede a tu URL pública segura (`https://daw-XX.guillermofoix.org` o a la IP directa de AWS) forzando el refresco de caché en el navegador (`Ctrl + F5` o `Cmd + Shift + R`) para verificar que las modificaciones ya están en producción.
+Accede a tu URL pública segura (`https://daw-XX.guillermofoix.org` o `https://profe01...`) forzando el refresco de caché en el navegador (`Ctrl + F5` o `Cmd + Shift + R`) para verificar que las modificaciones ya están en producción.
 
 ---
 
@@ -129,7 +142,20 @@ Accede a tu URL pública segura (`https://daw-XX.guillermofoix.org` o a la IP di
 | :--- | :--- | :--- | :--- |
 | **1. Desarrollo** | PC Aula (Local) | `docker compose up -d`<br>`git add .`<br>`git commit -m "..."` | Modificar código, probar sin riesgo y registrar cambios. |
 | **2. Publicación** | PC Aula (Local) | `git push origin main` | Centralizar el código en GitHub. |
-| **3. Despliegue** | Servidor AWS EC2 | `git pull origin main`<br>`docker compose -f docker-compose.prod.yml up -d --build` | Descargar nueva versión y recrear contenedores con imagen actualizada. |
+| **3. Despliegue Desacoplado**<br>*(Recomendado P04-P05)* | Servidor AWS EC2 | `git pull origin main`<br>`docker compose -f docker-compose.app.yml up -d --build` | Desplegar nueva versión web sin tocar ni reiniciar la base de datos. |
+| **3b. Despliegue Monolítico**<br>*(Inicial P01-P03)* | Servidor AWS EC2 | `git pull origin main`<br>`docker compose -f docker-compose.prod.yml up -d --build` | Reconstruir todo el stack conjunto. |
+
+---
+
+## 🗺️ Hoja de Ruta del Proyecto: De Cero a Arquitectura Cloud Profesional
+
+| Práctica | Título y Enlace | Foco de Aprendizaje Principal |
+| :---: | :--- | :--- |
+| **P01** | [Despliegue en AWS EC2](P01_Despliegue_AWS.md) | Aprovisionamiento cloud, Linux Ubuntu, instalación Docker y primer despliegue por IP pública. |
+| **P02** | [Conectividad Cloudflare Tunnels](P02_Conectividad_Cloudflare_Tunnels.md) | Superar IPs efímeras de AWS con túneles Zero Trust, subdominios asignados y HTTPS automático. |
+| **P03** | [Securización HTTPS y Auditoría Web](P03_Securizacion_HTTPS_Hardening.md) | Análisis de certificados TLS 1.3, cabeceras de seguridad HTTP, auditoría de red con `nmap` y PWA. |
+| **P04** | [Desacople de Arquitectura en Docker](P04_Desacople_BD.md) | Separación de ciclos de vida en multi-stack (`db` vs `app`), redes externas Docker y resiliencia en caliente. |
+| **P05** | [Defensa en Profundidad y Zero Trust](P05_Seguridad_Pizzeria.md) | Cerrojazo perimetral en AWS (cerrar puerto 80), HTTP Basic Auth en Nginx para `/dbgate/` y hardening. |
 
 ---
 
