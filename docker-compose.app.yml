@@ -13,6 +13,8 @@
 #   docker compose -f docker-compose.app.yml up -d --build
 # ==============================================================================
 
+name: pizzeria-app
+
 services:
   # 1. Backend API REST (Node.js Express)
   backend:
@@ -48,7 +50,7 @@ services:
       - pizzeria-network
 
   # 3. WebApp Móvil PWA para Clientes y Mesas QR
-  frontend-qr:
+  frontend-qr-app:
     build:
       context: ./frontend-qr-app
       dockerfile: Dockerfile

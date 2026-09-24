@@ -5,6 +5,10 @@ dotenv.config();
 
 const { Pool } = pkg;
 
+// Configuración SSL: Habilitar si se conecta a un host remoto (como AWS RDS) o si se especifica DB_SSL
+const isRemoteHost = process.env.DB_HOST && process.env.DB_HOST !== 'db' && process.env.DB_HOST !== 'localhost' && process.env.DB_HOST !== '127.0.0.1';
+const sslConfig = process.env.DB_SSL === 'true' || isRemoteHost ? { rejectUnauthorized: false } : false;
+
 // Configuración del Pool de conexiones a PostgreSQL mediante variables de entorno
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -12,6 +16,7 @@ const pool = new Pool({
   user: process.env.DB_USER || 'pizzeria_user',
   password: process.env.DB_PASSWORD || 'pizzeria_pass_1234',
   database: process.env.DB_NAME || 'pizzeria_db',
+  ssl: sslConfig,
   max: 15,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 4000,

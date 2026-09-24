@@ -11,6 +11,8 @@
 #   docker compose -f docker-compose.db.yml up -d
 # ==============================================================================
 
+name: pizzeria-db
+
 services:
   # 1. Base de Datos Relacional (PostgreSQL 16)
   db:

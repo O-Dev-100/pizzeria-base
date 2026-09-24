@@ -107,11 +107,15 @@ Genera el archivo `.htpasswd` definiendo el usuario **`admin`** y una contraseñ
 echo "admin:$(openssl passwd -apr1 'PizzeriaAdmin_2026!')" > .htpasswd
 ```
 
-Asigna permisos de solo lectura para mayor seguridad:
+Asigna permisos de lectura para que el contenedor Nginx pueda leerlo:
 
 ```bash
-chmod 600 .htpasswd
+chmod 644 .htpasswd
 ```
+
+> [!IMPORTANT]
+> **Permisos de lectura en Docker (`chmod 644`):**  
+> El proceso de Nginx dentro del contenedor se ejecuta bajo el usuario no privilegiado `nginx` (UID 101). Si el archivo `.htpasswd` tuviera permisos restrictivos (como `600`), el servidor Nginx no podría leerlo y devolvería un error **`500 Internal Server Error`** al introducir las claves.
 
 *(Puedes comprobar que el archivo se ha creado correctamente y contiene el hash ejecutando `cat .htpasswd`).*
 
@@ -197,8 +201,8 @@ docker compose -f docker-compose.app.yml up -d --build frontend-web
 Vamos a comprobar que la protección funciona tanto desde el navegador como mediante auditoría con terminal:
 
 ### 1. Prueba en el Navegador
-Abre una ventana en modo incógnito (o refresca con `Ctrl + F5`) y accede a:  
-👉 **`https://daw-XX.guillermofoix.org/dbgate/`**
+Abre una ventana en modo incógnito (o refresca con `Ctrl + F5`) y accede a tu subdominio asignado:  
+👉 **`https://daw-XX.guillermofoix.org/dbgate/`** *(o `dam-XX` según tu grupo)*
 
 1. El navegador mostrará inmediatamente una **ventana emergente de inicio de sesión del sistema** solicitando usuario y contraseña:
    * **Nombre de usuario:** `admin`
@@ -207,7 +211,7 @@ Abre una ventana en modo incógnito (o refresca con `Ctrl + F5`) y accede a:
 3. Al introducir las credenciales correctas, DbGate cargará con normalidad.
 
 ### 2. Auditoría por Terminal con `curl`
-Desde la terminal, comprueba cómo responde Nginx cuando no se envían credenciales:
+Desde la terminal, comprueba cómo responde Nginx cuando no se envían credenciales *(sustituye `daw-XX` por tu subdominio)*:
 
 ```bash
 curl -sI https://daw-XX.guillermofoix.org/dbgate/ | grep -E "HTTP|WWW-Authenticate"
@@ -229,6 +233,11 @@ curl -sI -u admin:PizzeriaAdmin_2026! https://daw-XX.guillermofoix.org/dbgate/ |
 ```text
 HTTP/2 200 
 ```
+
+> [!TIP]
+> **Resolución de incidencias comunes en la verificación:**
+> * **Error `500 Internal Server Error`:** Indica que Nginx no tiene permiso para leer el archivo de contraseñas. Asegúrate de haber ejecutado `chmod 644 .htpasswd` en `~/pizzeria-base`.
+> * **Error `ERR_QUIC_PROTOCOL_ERROR` en Chrome:** Se produce si la red del aula bloquea el tráfico UDP (HTTP/3). Se soluciona accediendo a `chrome://flags/#enable-quic`, cambiando a **Disabled**, pulsando **Relaunch**, o abriendo la web desde Microsoft Edge o Firefox.
 
 ---
 

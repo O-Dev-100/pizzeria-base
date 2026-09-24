@@ -78,15 +78,19 @@ git pull origin main
 Detén y retira los contenedores monolíticos anteriores. **IMPORTANTE:** No utilices la opción `-v` (volúmenes) para no perder los datos registrados en tu base de datos:
 
 ```bash
+# 1. Detener y retirar el stack monolítico (NUNCA uses -v para no borrar la base de datos)
 docker compose -f docker-compose.prod.yml down
+
+# 2. Limpieza de seguridad (garantiza que ningún contenedor huérfano bloquee los nombres)
+docker rm -f pizzeria-prod-web pizzeria-prod-backend pizzeria-prod-qr pizzeria-prod-tunnel pizzeria-prod-db pizzeria-prod-dbgate 2>/dev/null || true
 ```
 
-Comprueba que no quede ningún contenedor de la pizzería activo:
+Comprueba que no quede ningún contenedor previo activo:
 
 ```bash
 docker ps
 ```
-*(Deberás ver únicamente la cabecera vacía).*
+*(Deberás ver únicamente la cabecera vacía, confirmando que el entorno está limpio).*
 
 ---
 
