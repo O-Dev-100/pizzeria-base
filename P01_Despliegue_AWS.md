@@ -64,7 +64,8 @@ _(Nota de seguridad perimetral: Gracias a la arquitectura de proxy inverso unifi
 1. En el panel izquierdo, acceder a **Instancias** y pulsar **Lanzar instancias**.
 2. Configurar los siguientes parámetros:
    - **Nombre:** `Pizzeria-TuNombre`
-   - **Imágenes de SO (AMI):** Seleccionar **Ubuntu** (Ubuntu Server 24.04 o 22.04 LTS, 64-bit x86).
+   - **Imágenes de SO (AMI):** Seleccionar **Ubuntu** (Ubuntu Server 24.04 o 22.04 LTS, 64-bit x86).  
+     > **Aviso de cambio de AMI:** Al cambiar de la opción por defecto (Amazon Linux) a Ubuntu, AWS mostrará una ventana emergente avisando de que se restablecerán configuraciones previas a sus valores por defecto. Es un aviso totalmente normal: pulse **Confirmar / Continuar** para seguir.
    - **Tipo de instancia:** Seleccionar **`t3.small`** _(la opción 'micro' carece de los recursos necesarios para orquestar los contenedores)._
    - **Par de claves:** Seleccionar la clave predeterminada (`vockey`).
    - **Configuraciones de red:** Pulsar en _Editar_ → _Seleccionar grupo de seguridad existente_ → Seleccionar el grupo `pizzeria-secgroup`.

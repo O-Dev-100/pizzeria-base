@@ -86,11 +86,10 @@ Nuestra máquina **EC2 actuará como "Bastión"**: como está dentro de la misma
 ### 1. Iniciar el Asistente de Creación en AWS
 1. Inicia sesión en la consola de **AWS Academy**.
 2. En la barra superior de búsqueda, escribe **RDS** y entra en el servicio.
-3. En la pantalla inicial de bienvenida de *Aurora and RDS*:
-   > [!WARNING]
-   > **Cuidado con la pantalla de bienvenida:** Verás dos tarjetas:
-   > * **Izquierda ("Cree con la configuración exprés"):** ❌ **NO pulses el botón naranja con el cohete**. Crea Aurora Serverless que no entra en la capa gratuita y agota créditos rápidamente.
-   > * **Derecha ("Crear con configuración completa"):** ✅ **Haz clic en el botón blanco con borde azul `Crear`** (o entra en el menú izquierdo en *Bases de datos* $\rightarrow$ *Crear base de datos*).
+3. Accede al apartado **Bases de datos** en el menú izquierdo y pulsa en el botón naranja **Crear base de datos**:
+   * En el menú desplegable del botón, selecciona: 👉 **Configuración completa** (*Standard create*).
+   * ⚠️ **Atención:** Si pulsas directamente o seleccionas *Configuración exprés* (con el icono del cohete 🚀), AWS intentará crear un clúster Aurora Serverless no cubierto por la capa gratuita que consumirá créditos de la cuenta de AWS Academy.
+   *(Si AWS te muestra una pantalla de bienvenida con dos tarjetas grandes, elige igualmente la tarjeta derecha **Crear con configuración completa**).*
 
 ---
 
@@ -340,6 +339,64 @@ curl -s http://localhost/api/health
 2. Comprobarás que todo el catálogo de pizzas carga con total normalidad.
 3. Haz clic en **Hacer Pedido**, añade un par de pizzas al carrito y pulsa **Confirmar Pedido**.
 4. ¡El pedido se ha procesado y guardado en tiempo real en la infraestructura gestionada de **Amazon Web Services** con la base de datos de Docker totalmente apagada!
+
+---
+
+### 7. (Opcional) Visualizar y gestionar AWS RDS desde DbGate
+
+> [!NOTE]
+> **¿Por qué DbGate muestra `API error: DBGM-00309 Database connection closed`?**  
+> Si abres `/dbgate/` tras apagar `pizzeria-prod-db`, verás un error de conexión en la conexión predeterminada. **¡Esto es la prueba definitiva de que la base de datos local de Docker está 100% apagada!** DbGate estaba configurado para conectarse al contenedor `db:5432`.
+
+Para conectar DbGate a tu nueva base de datos en AWS RDS, es imprescindible habilitar el soporte de cifrado SSL, ya que Amazon RDS rechaza cualquier intento de conexión en texto plano con el error:
+`no pg_hba.conf entry for host "...", no encryption`.
+
+Sin embargo, cuando DbGate tiene conexiones inyectadas por variables de entorno (`CONNECTIONS=pizzeria`):
+1. **Bloquea la interfaz gráfica** e impide crear o editar conexiones desde el navegador.
+2. **Ignora el parámetro SSL** porque su lector de variables de entorno no soporta flags de cifrado.
+
+La solución limpia y definitiva es **simplificar `docker-compose.db.yml`** (dejando DbGate libre de variables estáticas) e **inyectar la conexión con `useSsl: true`** en su archivo de configuración interno:
+
+#### Paso 1: Limpiar `docker-compose.db.yml` en tu EC2
+Ejecuta este comando directo en la terminal para retirar las variables que forzaban la conexión al contenedor local:
+```bash
+sed -i '/- CONNECTIONS=pizzeria/,/- ENGINE_pizzeria=/d' docker-compose.db.yml
+```
+*(O si prefieres editarlo con `nano ~/pizzeria-base/docker-compose.db.yml`, deja la sección `dbgate` limpia únicamente con `WEB_ROOT=/dbgate` y `SKIP_ALL_AUTH=true`).*
+
+#### Paso 2: Recrear el contenedor de DbGate
+```bash
+docker compose -f docker-compose.db.yml up -d --force-recreate dbgate
+```
+
+#### Paso 3: Inyectar la conexión con SSL a AWS RDS
+Ejecuta este comando directo en la terminal de tu EC2 para guardar la conexión con el cifrado SSL (`"useSsl": true`) activado:
+
+```bash
+docker exec -i pizzeria-prod-dbgate sh -c 'cat > /root/.dbgate/connections.jsonl' << 'EOF'
+{"_id":"pizzeria_rds","engine":"postgres@dbgate-plugin-postgres","server":"pizzeria-db.cujmuqw6zgcb.us-east-1.rds.amazonaws.com","port":5432,"user":"pizzeria_user","password":"pizzeria_pass_2026!","defaultDatabase":"pizzeria_db","displayName":"AWS RDS Bella Napoli","useSsl":true}
+EOF
+```
+
+> [!IMPORTANT]
+> * Sustituye el valor de `server` por tu **Punto de enlace real** copiado de RDS.
+> * **Sin barra final:** El endpoint termina siempre en `.com` (ejemplo: `...rds.amazonaws.com`), **NUNCA añadas un slash `/` al final**.
+> *(Si usas la versión en una línea con `echo`, el símbolo `\"` que ves es una barra invertida de escape para las comillas en bash, no una barra que deba llevar el endpoint).*
+
+Reinicia el contenedor para cargar la configuración:
+```bash
+docker compose -f docker-compose.db.yml restart dbgate
+```
+
+Comprueba en la terminal que se ha guardado correctamente:
+```bash
+docker exec pizzeria-prod-dbgate cat /root/.dbgate/connections.jsonl
+```
+
+#### Paso 4: Verificación
+1. Abre o refresca en tu navegador: **`https://daw-XX.guillermofoix.org/dbgate/`**.
+2. En el panel izquierdo de **Conexiones**, haz doble clic sobre: 👉 **`AWS RDS Bella Napoli`**.
+3. Se conectará mediante SSL a Amazon RDS y desplegará la carpeta **Tablas**: verás `pedidos`, `pizzas`, `ingredientes`, `mesas` y podrás realizar consultas SQL directamente en la nube de AWS. Además, el botón `+` para crear nuevas conexiones vuelve a estar 100% operativo.
 
 ---
 

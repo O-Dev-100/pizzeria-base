@@ -133,8 +133,25 @@ export const initSchemaIfNeeded = async () => {
         (1, 2, 'libre'), (2, 4, 'ocupada'), (3, 4, 'libre'), (4, 6, 'libre'),
         (5, 2, 'libre'), (6, 8, 'libre'), (7, 4, 'libre'), (8, 4, 'libre')
         ON CONFLICT (numero) DO NOTHING;
+
+        -- Pedidos de demostración iniciales para el tablero de cocina KDS
+        INSERT INTO pedidos (id, tipo_pedido, mesa_numero, fecha, estado, total, cliente_nombre, cliente_telefono, cliente_direccion, metodo_pago, observaciones) VALUES
+        (101, 'mesa', 2, CURRENT_TIMESTAMP - INTERVAL '15 minutes', 'en_preparacion', 25.50, 'Carlos Ruiz', '600000001', NULL, 'pago_mesa', 'Masa fina bien tostada'),
+        (102, 'domicilio', NULL, CURRENT_TIMESTAMP - INTERVAL '10 minutes', 'pendiente', 29.50, 'Laura Martínez', '600000002', 'Calle Falsa 123, 3º B', 'efectivo_entrega', 'Sin cebolla en la Barbacoa. Llamar al telefonillo.'),
+        (103, 'recoger', NULL, CURRENT_TIMESTAMP - INTERVAL '25 minutes', 'listo', 13.50, 'Pedro Sánchez', '600000003', NULL, 'tarjeta_recogida', 'Pasa a recoger a las 14:15h')
+        ON CONFLICT (id) DO NOTHING;
+
+        SELECT setval('pedidos_id_seq', 103, true);
+
+        INSERT INTO lineas_pedido (pedido_id, pizza_id, cantidad, precio_unitario, notas) VALUES
+        (101, 2, 1, 12.00, 'Bien crujiente'),
+        (101, 3, 1, 13.50, NULL),
+        (102, 4, 1, 14.00, 'Sin cebolla'),
+        (102, 5, 1, 15.50, NULL),
+        (103, 3, 1, 13.50, NULL)
+        ON CONFLICT DO NOTHING;
       `);
-      console.log('✅ [DB Auto-Init] Base de datos aprovisionada con tablas y datos semilla iniciales.');
+      console.log('✅ [DB Auto-Init] Base de datos aprovisionada con tablas, pizzas, mesas y comandas de prueba.');
     }
   } catch (err) {
     console.error('⚠️ [DB Auto-Init Warning]:', err.message);
